@@ -1,6 +1,6 @@
 package rest.api.poc.demo.controller;
 
-import static java.lang.String.valueOf;
+import static java.util.stream.Collectors.toList;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import rest.api.poc.demo.domain.Cliente;
@@ -25,17 +26,29 @@ public class ClienteController {
     private List<Cliente> clientes = new ArrayList<>();
 
     @GetMapping
-    public List<Cliente> getAll() {
-        return clientes;
+    public List<Cliente> getAll(@RequestParam(name = "busca", required = false) String busca) {
+
+        if (isEmpty(busca)) {
+            return clientes;
+        }
+
+        return clientes.stream()
+                .filter(cliente -> cliente.getNome().contains(busca) || cliente.getNome().contains(busca))
+                .collect(toList());
     }
 
     @GetMapping("/{id}")
     public Cliente getById(@PathVariable String id) {
+
         return findClienteById(id);
     }
 
     @PostMapping
     public Cliente create(@RequestBody Cliente cliente) {
+
+        if (!isEmpty(cliente.getId())) {
+            throw new ResponseStatusException(BAD_REQUEST, "Cliente nao pode ser criado com Id");
+        }
 
         if (isEmpty(cliente.getNome())) {
             throw new ResponseStatusException(BAD_REQUEST, "Nome nao pode nulo ou vazio");
